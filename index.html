@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Game</title>
+    <style>
+        body{
+            background-color: black;
+        }
+        canvas{
+            border: 3px solid white;
+        }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+</body>
+</html>
+<script>
+    const canvas = document.querySelector('canvas')
+    const c = canvas.getContext('2d')
+
+    canvas.width = 600
+    canvas.height = 400
+
+    const bgImg = new Image();bgImg.src = './assets/catbg.jpg'
+    const fadeImg = new Image();fadeImg.src = './assets/fade.png'
+    const cat1 = new Image();cat1.src = './assets/cat1.png';
+    const cat2 = new Image();cat2.src = './assets/cat2.png';
+    const fishImg = new Image();fishImg.src = './assets/fish.png';
+    const goalImg = new Image();goalImg.src = './assets/goal.gif';
+    const moveOne = new Image();moveOne.src = './assets/move1.png';
+    const moveTwo = new Image();moveTwo.src = './assets/move2.png';
+    const cmoveOne = new Image();cmoveOne.src = './assets/cmove1.png';
+    const cmoveTwo = new Image();cmoveTwo.src = './assets/cmove2.png';
+    const bgMusic = new Audio('./assets/catdance.mp3')
+    const romanceDance = new Audio('./assets/romanceclip.mp3')
+    
+    const fishes = []
+    
+
+    const keys = {
+        w: false,
+        right: false,
+        left: false,
+        enter: false
+    }
+    let mouseX;
+    let mouseY;
+    let gameState = 'game'
+    let loveImg = moveOne
+
+    const player = {
+        x: 180,
+        y: 180,
+        width: 120,
+        height: 120,
+        speed: 2
+    }
+    let score = 0
+    let currentCatImage = cat1
+    const love = {
+        x: 10,
+        y: 150,
+        width: 64,
+        height: 76,
+        speed: 2
+    }
+    const itsame = {
+        x: 530,
+        y: 150,
+        width: 64,
+        height: 96,
+    }
+    let meImg = cmoveOne
+    let boom = false
+    let loveArr = ['Now I got you in my web!','I love you so much princess','Don\'t hate me for this lol']
+
+
+    async function draw(){
+        c.clearRect(0,0,canvas.width,canvas.height)
+        c.drawImage(bgImg,0,0,canvas.width,canvas.clientHeight)
+
+        if (gameState === 'goal'){
+            bgMusic.pause()
+
+            c.drawImage(goalImg, 0,0,canvas.width, canvas.height)
+            c.drawImage(fadeImg, 0,120,canvas.width, 150)
+
+            c.drawImage(loveImg, love.x,love.y,love.width,love.height)
+            c.drawImage(meImg, itsame.x,itsame.y,itsame.width,itsame.height)
+
+            c.fillStyle = 'black'
+            c.font = '30px monospace'
+            c.fillText('Press r to replay', 160, 300)
+
+            c.fillStyle = 'black'
+            c.font = '20px monospace'
+            c.fillText('Run to me my love!', 180, 110)
+
+            const wecollide = love.x + love.width > itsame.x &&
+                              love.y + love.height > itsame.y &&
+                              love.x < itsame.x + itsame.y &&
+                              love.y < itsame.x + itsame.y;
+            
+
+            if (wecollide){
+                romanceDance.volume = 0.3
+                romanceDance.play()
+                love.x = itsame.x - (love.width - 20)
+                c.fillStyle = 'white'
+                c.fillRect(20,140,470,85)
+                
+                c.fillStyle = 'black'
+                c.fillRect(120,145,248,20)
+
+                c.fillStyle = 'red'
+                c.font = '18px monospace'
+                c.fillText(loveArr[0], 125, 160)
+
+                c.fillStyle = 'hotpink'
+                c.font = '18px monospace'
+                c.fillText(loveArr[1], 110, 200)
+                c.fillText(loveArr[2], 115, 220)
+            }
+        }
+
+        if (gameState === 'game'){
+            romanceDance.pause()
+            bgMusic.volume = 0.03
+            bgMusic.play()
+            c.fillStyle = 'white'
+            c.font = '24px monospace'
+            c.fillText(`Fish: ${score}`, 20,30)
+    
+            c.drawImage(currentCatImage, player.x,player.y,player.width,player.height)
+
+            c.fillStyle = 'blue'
+            fishes.forEach(fish => c.drawImage(fishImg, fish.x,fish.y,fish.width,fish.height))
+
+            if (score === 10){
+                gameState = 'goal'
+            }
+
+    }
+}
+
+    function update(){
+        let fishCollected = false
+
+        fishes.forEach(f => {
+            const fish = fishes[0]
+            
+            const collide = player.x + player.width > fish.x &&
+                            player.y + player.height > fish.y &&
+                            player.x < fish.x + fish.width &&
+                            player.y < fish.y + fish.height;
+            
+
+            if (collide && gameState === 'game'){
+                score += 1
+                fishes.pop()
+            }
+        })
+
+        if (keys.w){
+            let dx = mouseX - player.x
+            let dy = mouseY - player.y
+            let distance = Math.hypot(dx, dy)
+
+            if (distance > 1){
+                player.x += (dx / distance) * player.speed
+                player.y += (dy / distance) * player.speed
+            }
+        }
+        if (keys.right){
+            love.x += player.speed
+            pipDance()
+
+        }
+        if (keys.left){
+            love.x -= player.speed
+        }
+
+    }
+
+    function loop(){
+        draw()
+        update()
+        requestAnimationFrame(loop)
+    }
+    loop()
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'w' && gameState === 'game'){
+            keys.w = true
+        }
+        if (e.key === 'r' && gameState === 'goal'){
+            score = 0
+            gameState = 'game'
+        }
+        if (e.key === 'd' && gameState === 'goal'){
+            keys.right = true
+        }
+        if (e.key === 'a' && gameState === 'goal'){
+            keys.left = true
+        }
+    })
+    document.addEventListener('keyup', (e) => {
+        if (e.key === 'w' && gameState === 'game'){
+            keys.w = false
+        }
+        if (e.key === 'd' && gameState === 'goal'){
+            keys.right = false
+        }
+        if (e.key === 'a' && gameState === 'goal'){
+            keys.left = false
+        }
+    })
+    canvas.addEventListener('mousemove', (e) => {
+        if (gameState === 'game'){
+        const rect = canvas.getBoundingClientRect()
+        mouseX = e.clientX - rect.left
+        mouseY = e.clientY - rect.top
+        }
+    })
+
+
+    function spawnFish(){
+        if (fishes.length < 1){
+            fishes.push({ x: Math.random() * (20 + 300), y: Math.random() * (20 + 300), width: 42, height: 42})
+        }
+    }
+
+    function pipDance(){
+        const delay = Math.random() * (100 + 1000)
+        setTimeout(() => {
+            loveImg = (loveImg === moveOne) ? moveTwo: moveOne
+        }, delay)
+    }
+
+    function catDance(){
+        const delay = Math.random() * (800 + 1600)
+        setTimeout(() => {
+            currentCatImage = (currentCatImage === cat1) ? cat2: cat1
+
+            catDance()
+        }, delay)
+    }
+    catDance()
+
+    function meDance(){
+        const delay = Math.random() * (800 + 1000)
+        setTimeout(() => {
+            meImg = (meImg === cmoveOne) ? cmoveTwo: cmoveOne
+
+            meDance()
+        }, delay)
+    }
+    meDance()
+
+    setInterval(() => {
+        spawnFish()
+    }, 8000)
+</script>
